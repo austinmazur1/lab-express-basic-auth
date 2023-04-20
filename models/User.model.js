@@ -7,15 +7,10 @@ const userSchema = new Schema({
     require: true,
     unique: true
   },
+  // passwordHash instead of password
   passwordHash: {
     type: String,
     required: true
-  },
-  email: {
-    type: String,
-    required: true,
-    unique: true,
-    lowercase: true,
   }
 });
 
