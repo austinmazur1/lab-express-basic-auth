@@ -8,4 +8,9 @@
 
 {{#if errorMessage}}
   <p>{{errorMessage}}</p>
+  {{else if loggedIn}}
+  <p>You are logged in already</p>
+  <a href="/profile">Profile</a>
 {{/if}}
+
+

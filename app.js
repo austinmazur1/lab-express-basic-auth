@@ -15,6 +15,11 @@ const hbs = require('hbs');
 
 const app = express();
 
+//utilize the config/session file
+require('./config/session.config')(app)
+//app is refering to the defined express app on the line above, 
+//therefore make sure we write this line after app is defined
+
 // ℹ️ This function is getting exported from the config folder. It runs most middlewares
 require('./config')(app);
 

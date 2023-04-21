@@ -26,6 +26,10 @@ router.post("/signup", async (req, res, next) => {
       res.render("auth/signup", {
         errorMessage: "Please enter all fields",
       });
+    } else if (username === User.findOne({username})) {
+      res.render("auth/signup", {
+        errorMessage: "Username already exists"
+      })
     }
 
     // Generate password hash and create user
@@ -45,14 +49,65 @@ router.post("/signup", async (req, res, next) => {
   }
 });
 
+//At first was taking id from param to find user and display the info on the page
 //renders the user profile page
-router.get("/profile/:id", async (req, res, next) => {
-  const userId = req.params.id;
+// router.get("/profile/:id", async (req, res, next) => {
+//   const userId = req.params.id;
 
-  //get the user id from the parameters and use that to send their data to the profile page
+//   //get the user id from the parameters and use that to send their data to the profile page
+//   try {
+//     const user = await User.findOne({ _id: userId });
+//     res.render("user/profile", { user });
+//   } catch (error) {
+//     next(error);
+//   }
+// });
+
+router.get('/profile', (req, res) => {
+  res.render('user/profile', {userInSession: req.session.currentUser})
+})
+
+//Login route to render form
+router.get("/login", (req, res) => res.render("auth/login"));
+
+//Login in post route
+router.post("/login", async (req, res, next) => {
+  //grab the data passed from the form, in this case we are asking
+  //username and password
+  const { username, password } = req.body;
+  console.log(username, password);
+  console.log(req.session);
   try {
-    const user = await User.findOne({ _id: userId });
-    res.render("user/profile", { user });
+    //make sure they are submiting both fields
+    if (username === "" || password === "") {
+      res.render("auth/login", {
+        //Add if statement to views page to display message if needed
+        errorMessage: "Please enter both username and password to login",
+      });
+      return;
+    } else if (req.session.currentUser) {
+      res.render('auth/login', {
+        loggedIn: 'You are already loged in'
+      })
+    }
+
+    //mongoose query to check for user
+    const user = await User.findOne({ username });
+
+    //if user not found we send an error
+    if (!user) {
+      return res.status(401).send("Invalid username or password");
+
+      //if user exists, we then compare the password the entered and the hashedpassword in DB
+    } else if (bcryptjs.compareSync(password, user.passwordHash)) {
+      //Save user in the session if password is correct
+      req.session.currentUser = user;
+      res.redirect(`/profile`);
+    } else {
+      res.render("auth/login", {
+        errorMessage: "Incorrect password",
+      });
+    }
   } catch (error) {
     next(error);
   }

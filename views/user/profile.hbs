@@ -1,7 +1,15 @@
 <h2>Profile</h2>
-
+{{!-- 
 Welcome
-{{user.username}}!
+{{user.username}}! --}}
 
-<br />
-<a href="/">back to homepage</a>
+{{#if userInSession}}
+  <h2>Welcome, {{userInSession.username}}!</h2>
+  <br />
+  <a href="/">back to homepage</a>
+
+{{else}}
+  You forgot to log in silly!
+  <br />
+  <a href="/login">login</a>
+{{/if}}
