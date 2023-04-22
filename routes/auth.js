@@ -1,14 +1,16 @@
 const router = require("express").Router();
 const User = require("../models/User.model");
+const { isLoggedIn, isLoggedOut } = require("../middleware/route-guard");
 
 //import bcryptjs
 const bcryptjs = require("bcryptjs");
 const saltRounds = 10;
 
-////SIGNUP ROUTE////
+//// SIGNUP ROUTES ////
 
 //get route to render our signup form
-router.get("/signup", (req, res) => res.render("auth/signup"));
+//if user signed in, they are redirected to profile page, via middleware
+router.get("/signup", isLoggedIn, (req, res) => res.render("auth/signup"));
 
 //post route to create our user
 router.post("/signup", async (req, res, next) => {
@@ -26,10 +28,10 @@ router.post("/signup", async (req, res, next) => {
       res.render("auth/signup", {
         errorMessage: "Please enter all fields",
       });
-    } else if (username === User.findOne({username})) {
+    } else if (username === User.findOne({ username })) {
       res.render("auth/signup", {
-        errorMessage: "Username already exists"
-      })
+        errorMessage: "Username already exists",
+      });
     }
 
     // Generate password hash and create user
@@ -49,28 +51,18 @@ router.post("/signup", async (req, res, next) => {
   }
 });
 
-//At first was taking id from param to find user and display the info on the page
-//renders the user profile page
-// router.get("/profile/:id", async (req, res, next) => {
-//   const userId = req.params.id;
+//Render user profile page
+router.get("/profile", (req, res) => {
+  res.render("user/profile", { userInSession: req.session.currentUser });
+});
 
-//   //get the user id from the parameters and use that to send their data to the profile page
-//   try {
-//     const user = await User.findOne({ _id: userId });
-//     res.render("user/profile", { user });
-//   } catch (error) {
-//     next(error);
-//   }
-// });
+//// LOGIN ROUTES ////
 
-router.get('/profile', (req, res) => {
-  res.render('user/profile', {userInSession: req.session.currentUser})
-})
+//Login route GET route render form
+//if user logged in already, redirect to profile, via middleware
+router.get("/login", isLoggedIn, (req, res) => res.render("auth/login"));
 
-//Login route to render form
-router.get("/login", (req, res) => res.render("auth/login"));
-
-//Login in post route
+//Login in POST route to handle data from form
 router.post("/login", async (req, res, next) => {
   //grab the data passed from the form, in this case we are asking
   //username and password
@@ -86,9 +78,9 @@ router.post("/login", async (req, res, next) => {
       });
       return;
     } else if (req.session.currentUser) {
-      res.render('auth/login', {
-        loggedIn: 'You are already loged in'
-      })
+      res.render("auth/login", {
+        loggedIn: "You are already loged in",
+      });
     }
 
     //mongoose query to check for user
@@ -111,6 +103,24 @@ router.post("/login", async (req, res, next) => {
   } catch (error) {
     next(error);
   }
+});
+
+//// LOGOUT ROUTE ////
+
+router.post("/logout", (req, res, next) => {
+  req.session.destroy((err) => {
+    if (err) next(err);
+    res.redirect("/");
+  });
+});
+
+//iteration 3 use middleware to check if user logged in, if not they cant access private
+router.get("/main", async (req, res, next) => {
+  res.render("user/main");
+});
+
+router.get("/private", isLoggedOut, async (req, res, next) => {
+  res.render("user/private");
 });
 
 module.exports = router;
